@@ -1,0 +1,78 @@
+#!/bin/bash
+
+SPECIAL_OPTIONS=
+EXT_TO_INT="ext-to-int"
+NET_EXIST="NO"
+
+# non-admin networks
+GATEWAY="192.168.111.1"
+NETWORK_ID="192.168.111.0/24"
+
+echo 'enter tenant name'
+read -r TENANT_NAME
+
+TENANT_NAME_LOWERCASE=${TENANT_NAME,,}
+TENANT_ID=`keystone tenant-list | grep $TENANT_NAME  | awk '{print $2}'`
+
+if [[ $TENANT_ID == "" ]]; then
+	echo "ERROR :: tenant $TENANT_ID not found !"
+	TENANT_ID="== ==### NOT FOUND "
+fi
+
+NET="net"
+POOL="pool"
+
+
+# router ext-int id
+ROUTER_ID=`neutron router-list | grep $EXT_TO_INT | awk '{print $2}'`
+
+echo ""
+echo "gateway: $GATEWAY"
+echo "network_id: $NETWORK_ID"
+echo "external_network: $EXT_TO_INT"
+echo "router_id: $ROUTER_ID"
+echo "tenant_name: $TENANT_NAME"
+echo "tenant_id: $TENANT_ID"
+echo "net_name: $TENANT_NAME_LOWERCASE-$NET"
+echo "subnet_name: $TENANT_NAME_LOWERCASE-$POOL"
+echo ""
+
+# CHECK network_id
+neutron net-list | grep $NETWORK_ID
+if [[ $? -eq 0 ]]; then
+	echo "network id exists"
+fi
+
+echo 'do you want to continue? (Yes / No)'
+read -r ANSWER
+
+if [[ $ANSWER == "No" || $ANSWER == "" ]]; then
+	exit 0
+fi
+
+# CHECK network
+neutron net-list | grep $TENANT_NAME_LOWERCASE-$NET
+if [[ $? -eq 0 ]]; then
+
+	# ADD subnet
+	neutron subnet-create --tenant-id $TENANT_ID $TENANT_NAME_LOWERCASE-$NET $NETWORK_ID --gateway $GATEWAY --name $TENANT_NAME_LOWERCASE-$POOL
+else
+	
+	# ADD network
+	neutron net-create --tenant-id $TENANT_ID $TENANT_NAME_LOWERCASE-$NET $SPECIAL_OPTIONS
+
+	# ADD subnet
+	neutron subnet-create --tenant-id $TENANT_ID $TENANT_NAME_LOWERCASE-$NET $NETWORK_ID --gateway $GATEWAY --name $TENANT_NAME_LOWERCASE-$POOL
+fi
+
+
+# CHECK subnet
+neutron subnet-list | grep $TENANT_NAME_LOWERCASE-$POOL
+TENANT_NET_SUBNET_ID=`neutron subnet-list | grep $TENANT_NAME_LOWERCASE-$POOL | awk '{print $2}'`
+
+if [[ $? -eq 0 ]]; then
+	
+	# ADD router interface
+	neutron router-interface-add $ROUTER_ID $TENANT_NET_SUBNET_ID
+fi
+
