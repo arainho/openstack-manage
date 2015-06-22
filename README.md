@@ -1,2 +1,2 @@
 # openstack-manage
-Bash scripts to mange openstack daily tasks
+Bash scripts to manage openstack daily tasks
