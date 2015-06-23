@@ -1,0 +1,111 @@
+#!/bin/bash
+
+# VARs
+INSTANCE_NAME=""
+INSTANCE_ID=""
+INSTANCE_IPv4=""
+
+INSTANCE_NAME_TO_RECOVER=""
+INSTANCE_ID_TO_RECOVER=""
+INSTANCE_NAME_IN_ERROR=""
+
+PORT_ID=""
+EMPTY_PORTS="false"
+ANSWER=""
+ANSWER_RECOVER=""
+
+Status=""
+PowerState=""
+TaskState=""
+
+
+# GET name
+echo 'enter instance name'
+read INSTANCE_NAME
+
+# CHECK if exists
+nova list | grep $INSTANCE_NAME 
+# > /dev/null 2>&1
+
+# GET instance id
+INSTANCE_ID=`nova list --all-tenants=1 | grep $INSTANCE_NAME | awk '{print $2}'`
+
+# GET ipv4
+echo $INSTANCE_IPv4
+INSTANCE_IPv4=`nova show $INSTANCE_ID | grep network | awk '{print $5}'`
+
+# GET port id
+PORT_ID=`neutron port-list | grep $INSTANCE_IPv4 | awk '{print $2}'`
+
+# CHECK if port exist's
+if [[ $PORT_ID == "" || $PORT_ID == " " ]];then
+
+	PORT_ID="no ports attached!"
+	EMPTY_PORTS="true"
+fi
+	
+# SHOW var's
+echo ""
+echo "instance_name = $INSTANCE_NAME"
+echo "instance_id   = $INSTANCE_ID"
+echo "ipv4          = $INSTANCE_IPv4"
+echo "port_id       = $PORT_ID"
+
+# RECOVER INSTANCE
+echo ""
+echo "recover instance $INSTANCE_NAME, id=$INSTANCE_ID ? ( yes/no )"
+read ANSWER_RECOVER
+
+# recover instance if "yes"
+if [[ $ANSWER_RECOVER == "yes"  ]]; then
+
+	echo "reset-state $INSTANCE_ID"
+	nova reset-state $INSTANCE_ID
+	nova reset-state --active $INSTANCE_ID
+	
+	echo "stop instance $INSTANCE_ID"
+	nova stop $INSTANCE_ID
+	
+	echo "stop instance $INSTANCE_ID"
+	nova start $INSTANCE_ID
+else
+	echo ""
+	echo "exit"
+	exit 0
+fi
+
+# CHECK IF instance is UP
+Status="ACTIVE"
+PowerState="running"
+TaskState="-"
+
+nova list | grep $INSTANCE_NAME | grep $Status | grep $PowerState | grep $TaskState
+
+if [ $? -eq 0 ]; then
+	echo "instance UP :-)"
+fi
+
+if [ $? -eq 1 ]; then
+	
+	echo "Not UP ... or Other State!!!" 
+fi
+
+# CHECK instances in some error state
+PowerState="Shutdown"
+#TaskState="deleting"
+nova list --all-tenants=1 | grep ERROR
+
+if [ $? -eq 0 ]; then
+
+	echo "check instances in error state"
+	INSTANCE_NAME_IN_ERROR=$(nova list --all-tenants=1 | grep $INSTANCE_ID | awk '{print $4}')
+	
+	for instance in $INSTANCE_NAME_IN_ERROR; do
+		echo "$INSTANCE_NAME_IN_ERROR is in error state"
+	done
+
+fi
+
+# THE END
+echo ""
+exit 0
