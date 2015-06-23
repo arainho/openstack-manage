@@ -4,7 +4,7 @@ SPECIAL_OPTIONS=
 EXT_TO_INT="ext-to-int"
 NET_EXIST="NO"
 
-# non-admin networks
+# tenant network to create
 GATEWAY="192.168.111.1"
 NETWORK_ID="192.168.111.0/24"
 
