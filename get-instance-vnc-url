@@ -1,0 +1,32 @@
+#!/bin/bash
+#!/bin/bash
+
+INSTANCE_NAME=""
+INSTANCE_ID=""
+SMALL_ID=""
+
+echo "enter instance name"
+read -r INSTANCE_NAME
+
+# GET instance id
+INSTANCE_ID=$(nova list --all-tenants | cut -d "|" -f 1,2,3 | grep $INSTANCE_NAME | awk '{print $2}')
+
+# GET small id
+SMALL_ID=`nova show $INSTANCE_ID | grep OS-EXT-SRV-ATTR:instance_name | awk '{print $4}'`
+
+# GET hypervisor 
+HYPERVISOR=$(nova show $INSTANCE_ID | grep "OS-EXT-SRV-ATTR:hypervisor_hostname" | awk '{print $4}')
+
+# GET vnc
+#VNC_URL=$(nova get-vnc-console $INSTANCE_ID novnc | grep novnc | awk '{print $4}')
+VNC_URL=$(nova get-vnc-console $INSTANCE_ID novnc)
+
+# PRINT name, id
+
+echo
+echo "Instance:    $INSTANCE_NAME"
+echo "ID:          $INSTANCE_ID"
+echo "smalll id:   $SMALL_ID"
+echo "Hypervisor:  $HYPERVISOR"
+echo "VNC URL:     $VNC_URL"
+echo
