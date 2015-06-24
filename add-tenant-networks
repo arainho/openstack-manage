@@ -1,4 +1,5 @@
 #!/bin/bash
+# script to create new tenant networks
 
 SPECIAL_OPTIONS=
 EXT_TO_INT="ext-to-int"
