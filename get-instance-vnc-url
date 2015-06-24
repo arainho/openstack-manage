@@ -1,4 +1,5 @@
 #!/bin/bash
+# script to find instance vnc url
 
 INSTANCE_NAME=""
 INSTANCE_ID=""

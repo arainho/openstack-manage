@@ -1,4 +1,5 @@
 #!/bin/bash
+# script to check and recover instances state
 
 # VARs
 INSTANCE_NAME=""
