@@ -1,5 +1,4 @@
 #!/bin/bash
-#!/bin/bash
 
 INSTANCE_NAME=""
 INSTANCE_ID=""
@@ -18,11 +17,9 @@ SMALL_ID=`nova show $INSTANCE_ID | grep OS-EXT-SRV-ATTR:instance_name | awk '{pr
 HYPERVISOR=$(nova show $INSTANCE_ID | grep "OS-EXT-SRV-ATTR:hypervisor_hostname" | awk '{print $4}')
 
 # GET vnc
-#VNC_URL=$(nova get-vnc-console $INSTANCE_ID novnc | grep novnc | awk '{print $4}')
 VNC_URL=$(nova get-vnc-console $INSTANCE_ID novnc)
 
 # PRINT name, id
-
 echo
 echo "Instance:    $INSTANCE_NAME"
 echo "ID:          $INSTANCE_ID"
