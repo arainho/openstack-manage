@@ -1,4 +1,5 @@
 #!/bin/bash
+# shows compute node instances states
 
 DOMAIN="vm.example.net"
 
