@@ -1,0 +1,150 @@
+#!/bin/bash
+# force delete instances 
+
+# VARs
+INSTANCE_NAME=""
+INSTANCE_ID=""
+INSTANCE_IPv4=""
+
+INSTANCE_NAME_TO_DEL=""
+INSTANCE_ID_TO_DEL=""
+INSTANCE_NAME_IN_ERROR=""
+
+PORT_ID=""
+EMPTY_PORTS="false"
+ANSWER=""
+ANSWER_DEL=""
+
+
+
+# GET name
+echo 'enter instance name'
+read INSTANCE_NAME
+
+# CHECK if exists
+nova list | grep $INSTANCE_NAME 
+# > /dev/null 2>&1
+
+# GET instance id
+#if [[ $? -eq 0 ]]; then
+
+#	echo ""
+#	echo "instance $INSTANCE_NAME exist :-)"
+	
+	INSTANCE_ID=`nova list --all-tenants=1 | grep $INSTANCE_NAME | awk '{print $2}'`
+#fi
+
+# GET ipv4
+#INSTANCE_IPv4=`nova list | grep $INSTANCE_NAME | awk '{print $12}' | cut -d= -f 2`
+echo $INSTANCE_IPv4
+INSTANCE_IPv4=`nova show $INSTANCE_ID | grep network | awk '{print $5}'`
+
+# GET port id
+PORT_ID=`neutron port-list | grep $INSTANCE_IPv4 | awk '{print $2}'`
+
+# CHECK if port exist's
+if [[ $PORT_ID == "" || $PORT_ID == " " ]];then
+
+	PORT_ID="no ports attached!"
+	EMPTY_PORTS="true"
+fi
+	
+# SHOW var's
+echo ""
+echo "instance_name = $INSTANCE_NAME"
+echo "instance_id   = $INSTANCE_ID"
+echo "ipv4          = $INSTANCE_IPv4"
+echo "port_id       = $PORT_ID"
+
+
+
+if [[ $EMPTY_PORTS == "false" ]]; then
+
+	# REMOVE port
+	echo ""
+	echo "remove port $PORT_ID from instance $INSTANCE_NAME ? ( yes/no )"
+	read ANSWER
+
+	if [[ $ANSWER == "yes"  ]]; then
+
+		neutron port-delete $PORT_ID
+	else
+		echo ""
+		echo "exit"
+		exit 0
+	fi
+fi
+
+# DELETE INSTANCE
+echo ""
+echo "remove instance $INSTANCE_NAME, id=$INSTANCE_ID ? ( yes/no )"
+read ANSWER_DEL
+
+if [[ $ANSWER_DEL == "yes"  ]]; then
+
+	# nova delete $INSTANCE_ID
+	echo "nova delete $INSTANCE_ID"
+else
+	echo ""
+	echo "exit"
+	exit 0
+fi
+
+# CHECK IF instance still exit's
+nova list | grep $INSTANCE_NAME
+
+if [ $? -eq 1 ]; then
+	echo "instance was successfully deleted :-)"
+fi
+
+if [ $? -eq 0 ]; then
+	
+	echo " instance still exits, trying to delete again ..." 
+
+	# If an instance gets stuck in an intermediate state (e.g., "deleting")
+	echo "wait 10 seconds"
+	sleep 10
+
+	nova list | grep deleting
+	if [ $? -eq 0 ]; then
+		
+		INSTANCE_ID_TO_DEL=`nova list --all-tenants=1 | grep $INSTANCE_NAME | awk '{print $2}'`
+
+		echo "one instance on deleting state !"
+		nova reset-state --active $INSTANCE_ID_TO_DEL
+		nova delete $INSTANCE_ID_TO_DEL
+		
+	fi
+	
+	# Use the --active to force the instance back into an active state instead of an error state
+	echo "try to force delete ..."
+	nova reset-state --active $INSTANCE_ID
+	nova force-delete $INSTANCE_ID
+
+	# try to stop instance and then delete
+	nova list | grep deleting
+	if [ $? -eq 0 ]; then
+		
+		INSTANCE_ID_TO_DEL=`nova list --all-tenants=1 | grep $INSTANCE_NAME | awk '{print $2}'`
+		nova reset-state --active $INSTANCE_ID_TO_DEL
+		nova stop $INSTANCE_ID_TO_DEL
+		nova delete $INSTANCE_ID_TO_DEL
+
+fi
+
+# CHECK instances in error state
+nova list --all-tenants=1 | grep
+
+if [ $? -eq 0 ]; then
+
+	echo "check instances in error state"
+	INSTANCE_NAME_IN_ERROR=`nova list --all-tenants=1 | grep deleting | awk '{print $4}'`
+	
+	echo "$INSTANCE_NAME_IN_ERROR is in error state"
+
+fi
+
+# THE END
+echo ""
+exit 0
+
