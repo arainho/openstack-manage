@@ -1,0 +1,17 @@
+#!/bin/bash
+
+echo "Enter compute node name where instances will be rebooted"
+read -r COMPUTE_NODE
+
+VM_NAMES=($(nova-manage vm list --host=$COMPUTE_NODE | awk '{print $1}' | grep -v instance))
+
+for machine in "${VM_NAMES[@]}"; do 
+	VM_ID=$(nova list --all-tenants=1 | grep -v SHUTOFF | grep "| $machine " | awk '{print $2}')
+	if [ "$VM_ID" != "" ]; then
+		echo $machine ":" $VM_ID
+		nova reboot --hard $VM_ID
+		nova show $VM_ID | grep status | awk '{print $4}'
+		echo "done"
+		echo ""
+	fi
+done
