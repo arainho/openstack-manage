@@ -1,0 +1,81 @@
+#!/bin/bash
+# find unused network ids
+	
+NETWORK_ID_START="192.168.0.0"
+NETWORK_ID_END="192.168.254.0"
+NETWORK="192.168"
+NETMASK="0/24"
+START_NUMBER=1
+END_NUMBER=3
+
+find_unused_networks(){
+
+	NET_EXIST=""
+	
+	INCREMENT_NUMBER=$START_NUMBER
+	NETWORK_ID="$NETWORK.$INCREMENT_NUMBER.$NETMASK"
+	GATEWAY="$NETWORK.$INCREMENT_NUMBER.1"
+	NETWORK_LIST=()
+	
+	# increment end number
+	let END_NUMBER+=1
+
+	# set network id list	
+	NETWORK_ID_LIST=($(neutron subnet-list | grep $NETWORK | awk '{print $6}' | sort))
+	ARRAY_SIZE=${#NETWORK_ID_LIST[@]}
+	let "ARRAY_SIZE-=1"
+	LAST_NETWORK_ID=${NETWORK_ID_LIST[ARRAY_SIZE]}
+	
+	# check id_start
+	while [[ $INCREMENT_NUMBER -ne $END_NUMBER ]]; do
+		
+		echo -n '['
+            	echo -n ' '
+		
+		NETWORK_ID="$NETWORK.$INCREMENT_NUMBER.0/24"
+		GATEWAY="$NETWORK.$INCREMENT_NUMBER.1"
+	
+		neutron subnet-list | grep "$NETWORK_ID" > /dev/null
+		if [[ $? -eq 0 ]]; then
+	
+			# network id exits
+			NET_EXIST="YES"
+	
+		elif [[ $? -eq 1 ]]; then
+			
+			# network not found
+			NET_EXIST="NO"
+			NETWORK_LIST+=($NETWORK_ID)
+		fi
+		
+		# incrementing network to: $INCREMENT_NUMBER
+		let INCREMENT_NUMBER=$INCREMENT_NUMBER+1
+
+		# print progress
+            	echo -n '=>'
+            	echo -n ' '
+            	echo -n "] $NETWORK_ID" $'\r'		
+		
+	done
+	
+	echo "+------+ DONE +-------+"	
+	echo ${NETWORK_LIST[@]}
+	
+	if [[ $NET_EXIST == "NO" ]]; then
+	
+		for my_net in ${NETWORK_LIST[@]}; do
+			neutron subnet-list | grep "$my_net" > /dev/null
+			if [[ $? -eq 1 ]]; then
+
+				echo ' '
+				echo "creating network: $my_net"	
+				NEW_NETWORK_2_CREATE=$my_net
+
+				break
+			fi
+		done
+	fi
+
+}
+
+find_unused_networks
