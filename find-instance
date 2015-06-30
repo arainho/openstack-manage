@@ -1,0 +1,29 @@
+#!/bin/bash
+# find instance compute node
+
+## VARs
+INSTANCE_NAME=""
+INSTANCE_ID=""
+HYPERVISOR_HOSTNAME=""
+
+
+# GET instance name
+
+	echo "enter instance name"
+	read -r INSTANCE_NAME
+
+# GET instance id
+
+	INSTANCE_ID=`nova list --all-tenants=1 | grep $INSTANCE_NAME | awk '{print $2}'`
+
+
+# GET hypervisor name
+
+	HYPERVISOR_HOSTNAME=`nova show $INSTANCE_ID | grep hypervisor_hostname | awk '{print $4}'`
+
+# PRINT hypervisor name
+
+	echo ""
+	echo "found #$INSTANCE_NAME# instance @$HYPERVISOR_HOSTNAME :-)"
+
+
