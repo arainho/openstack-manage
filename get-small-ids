@@ -1,0 +1,17 @@
+#!/bin/bash
+# get instance small id
+
+BIG_IDS[0]=`nova list --all-tenants=1 | awk '{print $2}' | grep -v ID | grep -v ^$`
+
+
+
+for i in ${BIG_IDS[@]}; do
+
+	INSTANCE_ID=$i
+
+	SMALL_ID=`nova show $INSTANCE_ID | grep OS-EXT-SRV-ATTR:instance_name | awk '{print $4}'`
+	NAME=`nova show $INSTANCE_ID | grep name | grep -v key_name | grep -v OS-EXT-SRV-ATTR:instance_name | grep -v OS-EXT-SRV-ATTR:hypervisor_hostname | grep -v security_groups | awk '{print $4}'`
+	
+	echo "$NAME: $SMALL_ID"
+
+done
