@@ -1,5 +1,4 @@
 #!/bin/bash
-# delete tenant network (net, subnet and ports)
 
 # VARs
 TENANT_NAME=""
@@ -13,58 +12,66 @@ NETWORK_NAME_GUESS=""
 NETWORK_NUMBERS=""
 SUBNET_ID=""
 SUBNET_NAME=""
-SUBNET_NAME_CHECK=""
+#SUBNET_NAME_CHECK=""
 
-# ASK project name
-echo "enter project name"
-read -r TENANT_NAME
+# GET project name
+if [ "$1" != "" ]
+then
+	TENANT_NAME="$1"
+else
+	# ask project name
+	echo "enter project name"
+	read -r TENANT_NAME
+fi
+
+# CONVERT tenant to lowercase	
 TENANT_NAME_LOWERCASE=${TENANT_NAME,,}
 
 # CHECK network name
 
 	# get network name
-	NETWORK_NAME_CHECK=`neutron net-list | grep -i $TENANT_NAME_LOWERCASE | awk '{print $4}'`
+        NETWORK_NAME_CHECK=$(neutron net-list | grep -i "${TENANT_NAME_LOWERCASE}" | awk '{print $4}')
 
 	# guess network name
-	NETWORK_NAME_GUESS="$TENANT_NAME_LOWERCASE-net"
+	NETWORK_NAME_GUESS="${TENANT_NAME_LOWERCASE}-net"
 
 	# save network name
-	if [ "$NETWORK_NAME_CHECK" == "$NETWORK_NAME_GUESS" ]; then
+	if [ "${NETWORK_NAME_CHECK}" == "${NETWORK_NAME_GUESS}" ]; then
 
-		NETWORK_NAME="$NETWORK_NAME_CHECK"
+		NETWORK_NAME="${NETWORK_NAME_CHECK}"
 		echo "checking network name"
-		echo "$NETWORK_NAME"
+		echo "${NETWORK_NAME}"
 	else
-		NETWORK_NAME="$NETWORK_NAME_GUESS"
+		NETWORK_NAME="${NETWORK_NAME_GUESS}"
 	fi
 
 # CHECK subnet name
 
 	echo "check subnet name"
-	SUBNET_NAME="$TENANT_NAME_LOWERCASE-pool"
-	echo "$SUBNET_NAME"
+	SUBNET_NAME="${TENANT_NAME_LOWERCASE}-pool"
+	echo "${SUBNET_NAME}"
 
 # GET router id
 	
-	ROUTER_ID=`neutron router-list | grep ext-to-int | awk '{print $2}'`
-	echo "router_id = $ROUTER_ID"
+	ROUTER_ID=$(neutron router-list | grep ext-to-int | awk '{print $2}')
+	echo "router_id = ${ROUTER_ID}"
 
 # GET NETWORK_NUMBERS
-NETWORK_NUMBERS=`neutron net-list | grep -i $TENANT_NAME_LOWERCASE | awk '{print $7}'`
+NETWORK_NUMBERS=$(neutron net-list | grep -i "${TENANT_NAME_LOWERCASE}" | awk '{print $7}')
 
 # GET port id
 	
-	PORT_ID=`neutron router-port-list $ROUTER_ID | grep $NETWORK_NUMBERS | awk '{print $2}'`
+	PORT_ID=$(neutron router-port-list "${ROUTER_ID}" | grep "${NETWORK_NUMBERS}" | awk '{print $2}')
 	echo "port_id = $PORT_ID"
 
 # GET net id
 	
-	NET_ID=`neutron net-list | grep $NETWORK_NAME | awk '{print $2}'`
-	echo $NET_ID
+	NET_ID=$(neutron net-list | grep "${NETWORK_NAME}" | awk '{print $2}')
+	echo "${NET_ID}"
 
 # GET subnet id
 
-	SUBNET_ID=`neutron subnet-list | grep $SUBNET_NAME | awk '{print $2}'`
+	SUBNET_ID=$(neutron subnet-list | grep "${SUBNET_NAME}" | awk '{print $2}')
 
 # CONFIRM delete
 
@@ -78,23 +85,25 @@ NETWORK_NUMBERS=`neutron net-list | grep -i $TENANT_NAME_LOWERCASE | awk '{print
 
 # DELETE it
 
-	if [ $ANSWER == "yes" ]; then
+	if [ "$ANSWER" == "yes" ]; then
 
 		# DELETE interface
 		echo "neutron router-interface-delete $ROUTER_ID $SUBNET_ID"
-		neutron router-interface-delete $ROUTER_ID $SUBNET_ID
+		neutron router-interface-delete "${ROUTER_ID}" "${SUBNET_ID}"
 
 		# DELETE PORTS
-		SUBNET_PORTS=`neutron port-list | grep $SUBNET_ID | awk '{print $2}'`
-		for i in $SUBNET_PORTS; do neutron port-delete $i; done
+                SUBNET_PORTS=$(neutron port-list | grep "${SUBNET_ID}" | awk '{print $2}')
+		for i in ${SUBNET_PORTS}
+                do 
+                    neutron port-delete "$i"
+                done
 
 		# DELETE subnet
-		echo "neutron subnet-delete $SUBNET_ID"
-		neutron subnet-delete $SUBNET_ID
+		echo "neutron subnet-delete ${SUBNET_ID}"
+		neutron subnet-delete "${SUBNET_ID}"
 
 		# DELETE net
-		echo "neutron net-delete $NET_ID"
-		neutron net-delete $NET_ID
+		echo "neutron net-delete ${NET_ID}"
+		neutron net-delete "${NET_ID}"
 	fi
-
 
