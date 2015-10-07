@@ -41,7 +41,9 @@ echo ""
 # CHECK network_id
 neutron net-list | grep $NETWORK_ID
 if [[ $? -eq 0 ]]; then
-	echo "network id exists"
+    echo ""
+    echo "Network id: ${NETWORK_ID} exists, fix NETWORK_ID and GATEWAY"
+    exit
 fi
 
 echo 'do you want to continue? (Yes / No)'
