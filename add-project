@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# LOGIN as admin
+#source /root/admin-openrc.sh
+
+echo 'enter project name'
+read -r PROJECT_NAME
+
+echo 'enter description'
+read -r DESCRIPTION
+
+# ADD project
+echo ''
+keystone tenant-create --name $PROJECT_NAME --description "$DESCRIPTION"
+
+# FIND project id
+echo ''
+PROJECT_ID=`keystone tenant-list | grep $PROJECT_NAME  | awk '{print $2}'`
+
+# CHECK project
+keystone tenant-get $PROJECT_ID > /dev/null 2>&1
+
+if [[ $? -eq 0 ]]; then
+	echo "project $PROJECT_NAME created :-)"
+	echo ''
+else
+	echo ' ALERT ... project not created !'
+	echo ''
+fi
+
+echo ''
+echo 'list projects'
+keystone tenant-list | grep $PROJECT_NAME
