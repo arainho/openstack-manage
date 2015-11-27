@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# VARs
+USER_ID=""
+TENANT_ID=""
+USER_NAME=""
+TENANT_NAME=""
+ROLE_NAME=" _member_"
+
+# LOGIN as admin
+#source /root/admin-openrc.sh
+
+echo 'enter tenant name'
+read -r TENANT_NAME
+
+echo 'enter users separated by space, to add them to ${TENANT_NAME}'
+read -r USER_NAME
+
+# CHECK tenant
+TENANT_ID=$(keystone tenant-list | grep ${TENANT_NAME}  | awk '{print $2}')
+keystone tenant-get $TENANT_ID > /dev/null 2>&1
+
+if [[ $? -eq 0 ]]; then
+	
+	echo "tenant $TENANT_NAME exits :-)"
+
+else
+	
+	echo ' ALERT ... tenant not found !'
+	echo ''
+	exit
+
+fi
+	
+echo ''
+
+for myuser in ${USER_NAME[@]}
+do
+	# FIND user ID
+	USER_ID=$(keystone user-list | grep ${myuser} | awk '{print $2}')
+	
+	# ASSIGN a role to a user-tenant pair. 
+	keystone user-role-add --user ${myuser} --tenant ${TENANT_ID} --role ${ROLE_NAME}
+
+	# Verify the role assignment:
+	keystone user-role-list --user ${myuser} --tenant ${TENANT_ID}
+done
+
