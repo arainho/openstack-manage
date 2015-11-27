@@ -3,8 +3,8 @@
 source /root/creds
 
 
-# ASK project name
-echo "insert project name"
+# ASK tenant name
+echo "insert tenant name"
 read TENANT_NAME
 
 # FIND tenant id
@@ -13,18 +13,18 @@ TENANT_ID=$(keystone tenant-list | grep -i "${TENANT_NAME}" | awk '{print $2}')
 if [[ $TENANT_ID == "" ]]
 then
     echo ""
-    echo "project does not exist"
+    echo "tenant does not exist"
     exit
 fi
 
 # DELETE network
 ./delete-network "${TENANT_NAME}"
 
-# DELETE project
+# DELETE tenant
 keystone tenant-delete "${TENANT_ID}"
 
 # CHECK
 keystone tenant-list | grep -i "${TENANT_NAME}"
 if [[ $? -eq 1 ]]; then
-	echo "project deleted :-)"
+	echo "tenant deleted :-)"
 fi

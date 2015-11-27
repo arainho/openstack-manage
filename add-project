@@ -3,31 +3,31 @@
 # LOGIN as admin
 #source /root/admin-openrc.sh
 
-echo 'enter project name'
-read -r PROJECT_NAME
+echo 'enter tenant name'
+read -r TENANT_NAME
 
 echo 'enter description'
 read -r DESCRIPTION
 
-# ADD project
+# ADD tenant
 echo ''
-keystone tenant-create --name $PROJECT_NAME --description "$DESCRIPTION"
+keystone tenant-create --name $TENANT_NAME --description "$DESCRIPTION"
 
-# FIND project id
+# FIND tenant id
 echo ''
-PROJECT_ID=`keystone tenant-list | grep $PROJECT_NAME  | awk '{print $2}'`
+TENANT_ID=`keystone tenant-list | grep $TENANT_NAME  | awk '{print $2}'`
 
-# CHECK project
-keystone tenant-get $PROJECT_ID > /dev/null 2>&1
+# CHECK tenant
+keystone tenant-get $TENANT_ID > /dev/null 2>&1
 
 if [[ $? -eq 0 ]]; then
-	echo "project $PROJECT_NAME created :-)"
+	echo "tenant $TENANT_NAME created :-)"
 	echo ''
 else
-	echo ' ALERT ... project not created !'
+	echo ' ALERT ... tenant not created !'
 	echo ''
 fi
 
 echo ''
-echo 'list projects'
-keystone tenant-list | grep $PROJECT_NAME
+echo 'list tenants'
+keystone tenant-list | grep $TENANT_NAME

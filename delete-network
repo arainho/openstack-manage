@@ -14,13 +14,13 @@ SUBNET_ID=""
 SUBNET_NAME=""
 #SUBNET_NAME_CHECK=""
 
-# GET project name
+# GET tenant name
 if [ "$1" != "" ]
 then
 	TENANT_NAME="$1"
 else
-	# ask project name
-	echo "enter project name"
+	# ask tenant name
+	echo "enter tenant name"
 	read -r TENANT_NAME
 fi
 
@@ -75,7 +75,7 @@ NETWORK_NUMBERS=$(neutron net-list | grep -i "${TENANT_NAME_LOWERCASE}" | awk '{
 
 # CONFIRM delete
 
-	echo "Project: $TENANT_NAME"
+	echo "TENANT: $TENANT_NAME"
 	echo "Network: $NETWORK_NAME $NETWORK_NUMBERS $NET_ID"
 	echo "Subnet: $SUBNET_NAME $SUBNET_ID"
 	echo "Router: $ROUTER_NAME $ROUTER_ID"
